@@ -1,2 +1,37 @@
 server:
   port: 8080
+
+keycloak-server:
+  uri: http://auth-server:9000/auth/realms/myrealm
+  openid-uri: ${keycloak-server.uri}/protocol/openid-connect
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          test-client:
+            provider: keycloak
+            client-id: test-client
+            client-secret: ${TEST_CLIENT_SECRET:your-client-secret}
+            client-authentication-method: client_secret_basic
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: resource:read
+        provider:
+          keycloak:
+            # Configure the provider with keycloak
+            authorization-uri: ${keycloak-server.openid-uri}/auth
+            token-uri: ${keycloak-server.openid-uri}/token
+            user-info-uri: ${keycloak-server.openid-uri}/userinfo
+            user-info-authentication-method: client_secret_basic
+            jwk-set-uri: ${keycloak-server.openid-uri}/certs
+            # Alternatively, set issuer-uri (replaces above settings) to use ${keycloak-server.uri}/.well-known/openid-configuration
+            # to auto-configure OpenID Connect on startup.
+            # issuer-uri: ${keycloak-server.uri}
+            # This is required in either case to inform Spring Security about keycloak's username
+            user-name-attribute: preferred_username
+
+logging:
+  level:
+    org.springframework.security: trace
